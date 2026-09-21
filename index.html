@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MatchaRank - My Matcha Places</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        matcha: {
+                            50: '#f4f7f2',
+                            100: '#e5ece1',
+                            200: '#cbdac5',
+                            300: '#a7c09f',
+                            400: '#83a579',
+                            500: '#64885a', // Main deep matcha accent
+                            600: '#4d6d45',
+                            700: '#3e5638',
+                            800: '#34462f',
+                            900: '#2c3b28',
+                        },
+                        cream: '#FAF8F5',
+                        oat: '#EFECE6',
+                        latte: '#E0D8CC',
+                        sage: '#A3B19B',
+                    },
+                    fontFamily: {
+                        sans: ['Quicksand', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #FAF8F5;
+            color: #2c3b28;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .card-shadow {
+            box-shadow: 0 4px 20px -2px rgba(100, 136, 90, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+        }
+
+        .gold-glow {
+            box-shadow: 0 0 15px rgba(234, 179, 8, 0.25);
+        }
+
+        /* Custom scrollbar for drink tags filter */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .drink-chip-active {
+            background-color: #64885a;
+            color: white;
+            border-color: #64885a;
+        }
+
+        /* Smooth drag animation */
+        .dragging {
+            opacity: 0.5;
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-24 md:pb-12 bg-cream text-matcha-900">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-30 bg-cream/90 backdrop-blur-md border-b border-oat">
+        <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-10 h-10 rounded-full bg-matcha-500 text-cream flex items-center justify-center text-xl shadow-md">
+                    🍵
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight text-matcha-800">MatchaRank</h1>
+                    <p class="text-xs text-matcha-600 font-medium">Curated Spot Rankings</p>
+                </div>
+            </div>
+            <button onclick="openModal()" class="bg-matcha-500 hover:bg-matcha-600 active:scale-95 transition-all text-white font-semibold text-xs py-2 px-3.5 rounded-full flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-plus text-sm"></i>
+                <span>Add Spot</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto px-4 pt-4 pb-12">
+        
+        <!-- Top Favorite Showcase Banner -->
+        <div id="topHighlightBanner" class="mb-5">
+            <!-- Dynamic Content Injected Here -->
+        </div>
+
+        <!-- Filter & Stats Bar -->
+        <div class="flex items-center justify-between mb-4 bg-oat/50 p-2.5 rounded-2xl border border-oat">
+            <div class="flex items-center gap-1.5 px-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-matcha-600">Total Ranked:</span>
+                <span id="totalCount" class="bg-matcha-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+            </div>
+            
+            <!-- Sort Selector -->
+            <div class="flex items-center gap-1">
+                <label for="sortSelect" class="text-xs font-medium text-matcha-700">Sort:</label>
+                <select id="sortSelect" onchange="handleSortChange()" class="bg-cream text-xs font-semibold text-matcha-800 rounded-xl px-2.5 py-1.5 border border-oat focus:outline-none focus:ring-1 focus:ring-matcha-500 cursor-pointer">
+                    <option value="rank">Custom Rank</option>
+                    <option value="rating">Highest Rating</option>
+                    <option value="name">Alphabetical</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Entries List -->
+        <div id="rankingsList" class="space-y-3.5">
+            <!-- Dynamic Entry Cards Injected Here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-12 px-4 bg-oat/30 rounded-3xl border border-dashed border-sage/40 my-4">
+            <div class="text-4xl mb-2">🍵</div>
+            <h3 class="font-bold text-matcha-800 text-base">No Matcha Spots Yet</h3>
+            <p class="text-xs text-matcha-600 mt-1 max-w-xs mx-auto">Tap the "Add Spot" button above to start building your personal matcha rankings!</p>
+            <button onclick="openModal()" class="mt-4 bg-matcha-500 text-white text-xs font-semibold py-2 px-4 rounded-full shadow-sm hover:bg-matcha-600">
+                + Add Your First Spot
+            </button>
+        </div>
+    </main>
+
+    <!-- Add / Edit Modal -->
+    <div id="entryModal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-cream w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto transform transition-transform duration-300 translate-y-full sm:translate-y-0">
+            <div class="flex items-center justify-between pb-3 border-b border-oat">
+                <h2 id="modalTitle" class="font-bold text-lg text-matcha-900">Add Matcha Spot</h2>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-oat/70 hover:bg-oat text-matcha-800 flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="entryForm" onsubmit="handleSaveEntry(event)" class="mt-4 space-y-4">
+                <input type="hidden" id="entryId">
+
+                <!-- Name & Location -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-matcha-700 mb-1">Spot Name & Location *</label>
+                    <input type="text" id="spotName" required placeholder="e.g., Zen Matcha Bar (SoHo)" class="w-full bg-white text-sm font-medium border border-oat rounded-xl px-3.5 py-2.5 text-matcha-900 placeholder-matcha-400 focus:outline-none focus:ring-2 focus:ring-matcha-500">
+                </div>
+
+                <!-- Star Rating -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-matcha-700 mb-1">Rating (1-5 Stars)</label>
+                    <div class="flex items-center gap-2 bg-white border border-oat p-2.5 rounded-xl">
+                        <div id="starContainer" class="flex gap-1.5 text-xl cursor-pointer">
+                            <!-- Dynamic Stars -->
+                        </div>
+                        <span id="ratingValueText" class="text-xs font-bold text-matcha-700 ml-2">5.0 / 5</span>
+                        <input type="hidden" id="spotRating" value="5">
+                    </div>
+                </div>
+
+                <!-- Drink Types Tried (Selectable Tags) -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-matcha-700 mb-1">Drink Types Tried</label>
+                    <p class="text-[11px] text-matcha-600 mb-2">Tap to toggle drinks had at this location:</p>
+                    <div id="drinkTypesSelector" class="flex flex-wrap gap-2">
+                        <!-- Dynamic Drink Type Chips -->
+                    </div>
+
+                    <!-- Custom Tag Input -->
+                    <div class="flex gap-2 mt-2.5">
+                        <input type="text" id="customTagInput" placeholder="Add custom flavor (e.g. Lavender 🪻)" class="flex-1 text-xs bg-white border border-oat rounded-xl px-3 py-2 text-matcha-900 placeholder-matcha-400 focus:outline-none focus:ring-1 focus:ring-matcha-500">
+                        <button type="button" onclick="addCustomTag()" class="bg-sage/30 hover:bg-sage/50 text-matcha-800 text-xs font-bold px-3 py-2 rounded-xl transition-colors">
+                            + Add Tag
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Form Action Buttons -->
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-oat hover:bg-latte text-matcha-800 font-bold text-xs py-3 rounded-xl transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 bg-matcha-500 hover:bg-matcha-600 text-white font-bold text-xs py-3 rounded-xl shadow-md transition-all">
+                        Save Entry
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-matcha-800 text-cream text-xs font-semibold px-4 py-2.5 rounded-full shadow-lg z-50 flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300">
+        <i class="fa-solid fa-circle-check text-matcha-300"></i>
+        <span id="toastMsg">Notification message</span>
+    </div>
+
+    <script>
+        // Pre-defined Drink Types with Icons
+        const DRINK_PRESETS = [
+            { id: 'original', label: 'Original Matcha', icon: '🍵' },
+            { id: 'banana', label: 'Banana Matcha', icon: '🍌' },
+            { id: 'passion', label: 'Passion Fruit Matcha', icon: '🥭' },
+            { id: 'frappe', label: 'Matcha Frappe / Slush', icon: '🍧' },
+            { id: 'strawberry', label: 'Strawberry Matcha', icon: '🍓' },
+            { id: 'coconut', label: 'Coconut / Cloud Foam', icon: '🥥' },
+        ];
+
+        // Sample Mock Data
+        const SAMPLE_DATA = [
+            {
+                id: 'm1',
+                name: 'Kyoto House Ceremonial',
+                rating: 5.0,
+                drinks: ['Original Matcha', 'Coconut / Cloud Foam'],
+                rankOrder: 1
+            },
+            {
+                id: 'm2',
+                name: 'Cloud Matcha Cafe',
+                rating: 4.8,
+                drinks: ['Strawberry Matcha', 'Banana Matcha'],
+                rankOrder: 2
+            },
+            {
+                id: 'm3',
+                name: 'Zen Garden Botanicals',
+                rating: 4.5,
+                drinks: ['Passion Fruit Matcha', 'Matcha Frappe / Slush'],
+                rankOrder: 3
+            }
+        ];
+
+        // App State
+        let entries = [];
+        let selectedDrinkTags = [];
+        let currentSort = 'rank';
+        let draggedIndex = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadEntries();
+            renderApp();
+        });
+
+        function loadEntries() {
+            const saved = localStorage.getItem('matcha_rankings_app');
+            if (saved) {
+                try {
+                    entries = JSON.parse(saved);
+                } catch (e) {
+                    console.error('Failed to parse saved data', e);
+                    entries = [...SAMPLE_DATA];
+                }
+            } else {
+                entries = [...SAMPLE_DATA];
+                saveEntries();
+            }
+        }
+
+        function saveEntries() {
+            localStorage.setItem('matcha_rankings_app', JSON.stringify(entries));
+        }
+
+        function renderApp() {
+            renderHighlightBanner();
+            renderList();
+            document.getElementById('totalCount').textContent = entries.length;
+        }
+
+        function getIconForDrink(drinkName) {
+            const found = DRINK_PRESETS.find(p => drinkName.toLowerCase().includes(p.label.toLowerCase()) || p.label.toLowerCase().includes(drinkName.toLowerCase()));
+            if (found) return found.icon;
+            if (drinkName.includes('🍵')) return '';
+            return '✨';
+        }
+
+        function renderHighlightBanner() {
+            const bannerEl = document.getElementById('topHighlightBanner');
+            if (entries.length === 0) {
+                bannerEl.innerHTML = '';
+                return;
+            }
+
+            // Find top ranked item
+            const sortedByRank = [...entries].sort((a, b) => a.rankOrder - b.rankOrder);
+            const topSpot = sortedByRank[0];
+
+            bannerEl.innerHTML = `
+                <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-matcha-600 via-matcha-700 to-matcha-900 text-white p-4 shadow-lg">
+                    <div class="absolute -right-6 -bottom-6 text-7xl opacity-10 pointer-events-none">🍵</div>
+                    
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <span class="bg-yellow-400 text-matcha-900 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full gold-glow">
+                            🏆 #1 TOP FAVORITE
+                        </span>
+                        <div class="flex items-center gap-1 text-yellow-300 text-xs font-bold">
+                            <i class="fa-solid fa-star"></i>
+                            <span>${topSpot.rating.toFixed(1)}</span>
+                        </div>
+                    </div>
+
+                    <h2 class="font-bold text-lg leading-snug drop-shadow-sm">${escapeHtml(topSpot.name)}</h2>
+                    
+                    <div class="flex flex-wrap gap-1.5 mt-2.5">
+                        ${topSpot.drinks.map(d => `
+                            <span class="bg-matcha-800/80 border border-matcha-500/40 text-matcha-100 text-[11px] font-medium px-2 py-0.5 rounded-lg flex items-center gap-1">
+                                <span>${getIconForDrink(d)}</span> ${escapeHtml(d)}
+                            </span>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderList() {
+            const listEl = document.getElementById('rankingsList');
+            const emptyEl = document.getElementById('emptyState');
+
+            if (entries.length === 0) {
+                listEl.innerHTML = '';
+                emptyEl.classList.remove('hidden');
+                return;
+            }
+
+            emptyEl.classList.add('hidden');
+
+            // Sort working copy
+            let displayList = [...entries];
+            if (currentSort === 'rank') {
+                displayList.sort((a, b) => a.rankOrder - b.rankOrder);
+            } else if (currentSort === 'rating') {
+                displayList.sort((a, b) => b.rating - a.rating);
+            } else if (currentSort === 'name') {
+                displayList.sort((a, b) => a.name.localeCompare(b.name));
+            }
+
+            listEl.innerHTML = displayList.map((item, index) => {
+                const isCustomSort = currentSort === 'rank';
+                const isFirst = index === 0 && isCustomSort;
+                const isSecond = index === 1 && isCustomSort;
+                const isThird = index === 2 && isCustomSort;
+
+                let rankBadgeBg = 'bg-matcha-100 text-matcha-800';
+                if (isFirst) rankBadgeBg = 'bg-yellow-400 text-yellow-950 font-bold gold-glow';
+                else if (isSecond) rankBadgeBg = 'bg-slate-200 text-slate-800 font-bold';
+                else if (isThird) rankBadgeBg = 'bg-amber-100 text-amber-900 font-bold';
+
+                return `
+                    <div 
+                        data-id="${item.id}"
+                        data-index="${index}"
+                        draggable="${isCustomSort ? 'true' : 'false'}"
+                        class="card-shadow bg-white rounded-2xl p-4 border border-oat relative transition-all duration-200 group hover:border-matcha-300"
+                    >
+                        <div class="flex items-start gap-3">
+                            
+                            <!-- Left: Drag Handle / Rank Badge -->
+                            <div class="flex flex-col items-center justify-between self-stretch gap-1">
+                                <div class="w-8 h-8 rounded-xl ${rankBadgeBg} flex items-center justify-center font-bold text-sm shadow-sm">
+                                    #${index + 1}
+                                </div>
+                                
+                                ${isCustomSort ? `
+                                    <div class="flex flex-col gap-0.5 mt-1">
+                                        <button onclick="moveRank('${item.id}', -1)" title="Move Up" class="w-6 h-6 rounded-md bg-oat/50 hover:bg-matcha-100 text-matcha-700 flex items-center justify-center text-xs active:scale-90 transition-transform ${index === 0 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === 0 ? 'disabled' : ''}>
+                                            <i class="fa-solid fa-chevron-up"></i>
+                                        </button>
+                                        <button onclick="moveRank('${item.id}', 1)" title="Move Down" class="w-6 h-6 rounded-md bg-oat/50 hover:bg-matcha-100 text-matcha-700 flex items-center justify-center text-xs active:scale-90 transition-transform ${index === displayList.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === displayList.length - 1 ? 'disabled' : ''}>
+                                            <i class="fa-solid fa-chevron-down"></i>
+                                        </button>
+                                    </div>
+                                ` : ''}
+                            </div>
+
+                            <!-- Center Content -->
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div>
+                                        <h3 class="font-bold text-base text-matcha-900 truncate leading-snug">${escapeHtml(item.name)}</h3>
+                                        <div class="flex items-center gap-1.5 mt-0.5">
+                                            <div class="flex text-amber-400 text-xs">
+                                                ${renderStarsHTML(item.rating)}
+                                            </div>
+                                            <span class="text-xs font-bold text-matcha-700">${item.rating.toFixed(1)}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Action Buttons -->
+                                    <div class="flex items-center gap-1">
+                                        <button onclick="openModal('${item.id}')" title="Edit" class="w-7 h-7 rounded-lg text-matcha-600 hover:bg-matcha-50 flex items-center justify-center text-xs transition-colors">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                        <button onclick="deleteEntry('${item.id}')" title="Delete" class="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-50 flex items-center justify-center text-xs transition-colors">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Drink Tags -->
+                                ${item.drinks && item.drinks.length > 0 ? `
+                                    <div class="flex flex-wrap gap-1.5 mt-2.5">
+                                        ${item.drinks.map(d => `
+                                            <span class="bg-oat/60 text-matcha-800 text-[11px] font-semibold px-2 py-0.5 rounded-lg border border-latte/40 flex items-center gap-1">
+                                                <span>${getIconForDrink(d)}</span> ${escapeHtml(d)}
+                                            </span>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (currentSort === 'rank') {
+                attachDragAndDropHandlers();
+            }
+        }
+
+        function attachDragAndDropHandlers() {
+            const cards = document.querySelectorAll('#rankingsList > div');
+            cards.forEach(card => {
+                card.addEventListener('dragstart', (e) => {
+                    draggedIndex = parseInt(card.getAttribute('data-index'));
+                    card.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                card.addEventListener('dragend', () => {
+                    card.classList.remove('dragging');
+                });
+
+                card.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                });
+
+                card.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const targetIndex = parseInt(card.getAttribute('data-index'));
+                    if (draggedIndex !== null && draggedIndex !== targetIndex) {
+                        reorderEntries(draggedIndex, targetIndex);
+                    }
+                });
+            });
+        }
+
+        // Helper to reorder rank array
+        function reorderEntries(fromIdx, toIdx) {
+            // Sort by rank first to get current visually ordered list
+            entries.sort((a, b) => a.rankOrder - b.rankOrder);
+            
+            const [movedItem] = entries.splice(fromIdx, 1);
+            entries.splice(toIdx, 0, movedItem);
+
+            // Reassign sequential rank numbers
+            entries.forEach((item, idx) => {
+                item.rankOrder = idx + 1;
+            });
+
+            saveEntries();
+            renderApp();
+            showToast("Rank order updated! 🍵");
+        }
+
+        // Move rank up or down manually via buttons
+        function moveRank(id, direction) {
+            entries.sort((a, b) => a.rankOrder - b.rankOrder);
+            const idx = entries.findIndex(e => e.id === id);
+            if (idx === -1) return;
+
+            const targetIdx = idx + direction;
+            if (targetIdx < 0 || targetIdx >= entries.length) return;
+
+            reorderEntries(idx, targetIdx);
+        }
+
+        function renderStarsHTML(rating) {
+            let stars = '';
+            for (let i = 1; i <= 5; i++) {
+                if (rating >= i) {
+                    stars += `<i class="fa-solid fa-star"></i>`;
+                } else if (rating >= i - 0.5) {
+                    stars += `<i class="fa-solid fa-star-half-stroke"></i>`;
+                } else {
+                    stars += `<i class="fa-regular fa-star text-latte"></i>`;
+                }
+            }
+            return stars;
+        }
+
+        function setupStarRating(initialValue = 5) {
+            const container = document.getElementById('starContainer');
+            const hiddenInput = document.getElementById('spotRating');
+            const ratingText = document.getElementById('ratingValueText');
+
+            hiddenInput.value = initialValue;
+            ratingText.textContent = `${parseFloat(initialValue).toFixed(1)} / 5`;
+
+            let html = '';
+            for (let i = 1; i <= 5; i++) {
+                html += `<i data-star="${i}" class="fa-solid fa-star ${i <= initialValue ? 'text-amber-400' : 'text-latte'} transition-colors"></i>`;
+            }
+            container.innerHTML = html;
+
+            const stars = container.querySelectorAll('[data-star]');
+            stars.forEach(star => {
+                star.addEventListener('click', () => {
+                    const val = parseFloat(star.getAttribute('data-star'));
+                    hiddenInput.value = val;
+                    ratingText.textContent = `${val.toFixed(1)} / 5`;
+                    
+                    stars.forEach((s, idx) => {
+                        if (idx + 1 <= val) {
+                            s.className = 'fa-solid fa-star text-amber-400 transition-colors';
+                        } else {
+                            s.className = 'fa-solid fa-star text-latte transition-colors';
+                        }
+                    });
+                });
+            });
+        }
+
+        function openModal(editId = null) {
+            const modal = document.getElementById('entryModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const form = document.getElementById('entryForm');
+
+            form.reset();
+            selectedDrinkTags = [];
+
+            if (editId) {
+                const item = entries.find(e => e.id === editId);
+                if (item) {
+                    modalTitle.textContent = 'Edit Matcha Spot';
+                    document.getElementById('entryId').value = item.id;
+                    document.getElementById('spotName').value = item.name;
+                    selectedDrinkTags = item.drinks ? [...item.drinks] : [];
+                    setupStarRating(item.rating);
+                }
+            } else {
+                modalTitle.textContent = 'Add Matcha Spot';
+                document.getElementById('entryId').value = '';
+                setupStarRating(5);
+            }
+
+            renderDrinkTypeSelector();
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.firstElementChild.classList.remove('translate-y-full');
+            }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('entryModal');
+            modal.classList.add('opacity-0');
+            modal.firstElementChild.classList.add('translate-y-full');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function renderDrinkTypeSelector() {
+            const container = document.getElementById('drinkTypesSelector');
+            
+            // Collect preset tags + custom tags already selected
+            const allTags = [...DRINK_PRESETS.map(p => p.label)];
+            selectedDrinkTags.forEach(tag => {
+                if (!allTags.includes(tag)) {
+                    allTags.push(tag);
+                }
+            });
+
+            container.innerHTML = allTags.map(tagLabel => {
+                const isSelected = selectedDrinkTags.includes(tagLabel);
+                const icon = getIconForDrink(tagLabel);
+
+                return `
+                    <button type="button" onclick="toggleDrinkTag('${escapeHtml(tagLabel)}')" class="text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 ${isSelected ? 'drink-chip-active border-matcha-500 shadow-sm' : 'bg-white text-matcha-800 border-oat hover:border-matcha-300'}">
+                        <span>${icon}</span>
+                        <span>${escapeHtml(tagLabel)}</span>
+                        ${isSelected ? '<i class="fa-solid fa-check text-[10px] ml-0.5"></i>' : ''}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function toggleDrinkTag(tagLabel) {
+            const idx = selectedDrinkTags.indexOf(tagLabel);
+            if (idx > -1) {
+                selectedDrinkTags.splice(idx, 1);
+            } else {
+                selectedDrinkTags.push(tagLabel);
+            }
+            renderDrinkTypeSelector();
+        }
+
+        function addCustomTag() {
+            const input = document.getElementById('customTagInput');
+            const val = input.value.trim();
+            if (val) {
+                if (!selectedDrinkTags.includes(val)) {
+                    selectedDrinkTags.push(val);
+                }
+                input.value = '';
+                renderDrinkTypeSelector();
+            }
+        }
+
+        function handleSaveEntry(e) {
+            e.preventDefault();
+
+            const id = document.getElementById('entryId').value;
+            const name = document.getElementById('spotName').value.trim();
+            const rating = parseFloat(document.getElementById('spotRating').value) || 5;
+
+            if (!name) return;
+
+            if (id) {
+                // Update existing
+                const item = entries.find(e => e.id === id);
+                if (item) {
+                    item.name = name;
+                    item.rating = rating;
+                    item.drinks = [...selectedDrinkTags];
+                }
+                showToast("Spot updated successfully! 🍃");
+            } else {
+                // Create new
+                const newRank = entries.length + 1;
+                const newEntry = {
+                    id: 'm_' + Date.now(),
+                    name,
+                    rating,
+                    drinks: [...selectedDrinkTags],
+                    rankOrder: newRank
+                };
+                entries.push(newEntry);
+                showToast("New matcha spot added! 🍵");
+            }
+
+            saveEntries();
+            renderApp();
+            closeModal();
+        }
+
+        function deleteEntry(id) {
+            const item = entries.find(e => e.id === id);
+            if (!item) return;
+
+            if (confirm(`Are you sure you want to remove "${item.name}" from your ranking?`)) {
+                entries = entries.filter(e => e.id !== id);
+                // Re-sequence ranks
+                entries.sort((a, b) => a.rankOrder - b.rankOrder);
+                entries.forEach((entry, idx) => {
+                    entry.rankOrder = idx + 1;
+                });
+
+                saveEntries();
+                renderApp();
+                showToast("Spot deleted 🗑️");
+            }
+        }
+
+        function handleSortChange() {
+            currentSort = document.getElementById('sortSelect').value;
+            renderList();
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            toastMsg.textContent = msg;
+            
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
