@@ -101,6 +101,11 @@
 
     <main class="max-w-md mx-auto px-4 pt-4 pb-12">
         
+        <!-- Top Favorite Showcase Banner -->
+        <div id="topHighlightBanner" class="mb-5">
+            <!-- Dynamic Content Injected Here -->
+        </div>
+
         <!-- Filter & Stats Bar -->
         <div class="flex items-center justify-between mb-4 bg-oat/50 p-2.5 rounded-2xl border border-oat">
             <div class="flex items-center gap-1.5 px-2">
@@ -244,7 +249,8 @@
       'Passion Fruit Matcha',
       'Coconut / Cloud Foam'
     ]
-  }{
+  },
+  {
     id: '4',
     rankOrder: 4,
     name: 'The Bee\'s Knees Coffee & Bakery',
@@ -260,7 +266,7 @@
     name: 'Nana\'s Green Tea',
     rating: 3.0,
     drinks: [
-      'Matcha Frappe',
+      'Matcha Frappe / Slush',
       'Warabimochi Matcha'
     ]
   }
@@ -297,6 +303,7 @@
         }
 
         function renderApp() {
+            renderHighlightBanner();
             renderList();
             document.getElementById('totalCount').textContent = entries.length;
         }
@@ -306,6 +313,44 @@
             if (found) return found.icon;
             if (drinkName.includes('🍵')) return '';
             return '✨';
+        }
+
+        function renderHighlightBanner() {
+            const bannerEl = document.getElementById('topHighlightBanner');
+            if (entries.length === 0) {
+                bannerEl.innerHTML = '';
+                return;
+            }
+
+            // Find top ranked item
+            const sortedByRank = [...entries].sort((a, b) => a.rankOrder - b.rankOrder);
+            const topSpot = sortedByRank[0];
+
+            bannerEl.innerHTML = `
+                <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-matcha-600 via-matcha-700 to-matcha-900 text-white p-4 shadow-lg">
+                    <div class="absolute -right-6 -bottom-6 text-7xl opacity-10 pointer-events-none">🍵</div>
+                    
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <span class="bg-yellow-400 text-matcha-900 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full gold-glow">
+                            🏆 #1 TOP FAVORITE
+                        </span>
+                        <div class="flex items-center gap-1 text-yellow-300 text-xs font-bold">
+                            <i class="fa-solid fa-star"></i>
+                            <span>${topSpot.rating.toFixed(1)}</span>
+                        </div>
+                    </div>
+
+                    <h2 class="font-bold text-lg leading-snug drop-shadow-sm">${escapeHtml(topSpot.name)}</h2>
+                    
+                    <div class="flex flex-wrap gap-1.5 mt-2.5">
+                        ${topSpot.drinks.map(d => `
+                            <span class="bg-matcha-800/80 border border-matcha-500/40 text-matcha-100 text-[11px] font-medium px-2 py-0.5 rounded-lg flex items-center gap-1">
+                                <span>${getIconForDrink(d)}</span> ${escapeHtml(d)}
+                            </span>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
         }
 
         function renderList() {
